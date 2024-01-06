@@ -1,3 +1,5 @@
+import pygame
+
 import pygame.camera
 from io import BytesIO
 
@@ -6,7 +8,7 @@ class CameraManager:
     def __init__(self, cam_res, selected_option):
         self.cam_res = cam_res
         self.cam = pygame.camera.Camera(selected_option, cam_res)
-        self.snapshot = None
+        self.snapshot = pygame.surface.Surface(cam_res, 0)
 
     def start_camera(self):
         self.cam.start()
