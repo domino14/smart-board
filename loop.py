@@ -1,17 +1,17 @@
-# Python program to capture a single image
-# using pygame library
+import time
 
-# importing the pygame library
 import pygame
 import pygame.camera
 from optionbox import OptionBox
-from io import BytesIO
+
+
 from scrabblecam import get_from_scrabblecam
-from clock import ScrabbleClock
+from clock import ScrabbleClockAndScores, draw_clocks_and_scores
 from cgp import scrabblecam_to_fen
+from camera import CameraManager
 
 
-scrabble_clock = ScrabbleClock(25 * 60)  # Initialize with 25 minutes
+scrabble_clock = ScrabbleClockAndScores(25 * 60)  # Initialize with 25 minutes
 
 # initializing the camera
 pygame.camera.init()
@@ -26,13 +26,17 @@ cam_res = (1280, 720)
 window = pygame.display.set_mode(size)
 
 # Setting name for window
-pygame.display.set_caption("Where did all these smart boards come from?")
+pygame.display.set_caption(
+    "Where did all these smart boards come from? "
+    "I don't think that I can choose just one."
+)
 
 running = True
 
-clock = pygame.time.Clock()
 font_size = 30
 font = pygame.font.SysFont(None, font_size)
+
+score_font = pygame.font.SysFont("monospace", 48)
 
 list1 = OptionBox(
     40,
@@ -45,20 +49,19 @@ list1 = OptionBox(
     camlist,
 )
 
+cam_manager = None
 
-cam = None
-snapshot = None
+last_time = time.time()
+last_blitted_snapshot = None
 
+clock = pygame.time.Clock()
 
-def draw_red_circle(surface, position):
-    pygame.draw.circle(surface, (255, 0, 0), position, 20)  # (255, 0, 0) is red
-
+PROCESS_SNAPSHOT_EVENT = pygame.USEREVENT + 1
 
 # Game loop
 # keep game running till running is true
 while running:
-    clock.tick(20)
-
+    clock.tick(10)
     # Check for event if user has pushed
     # any event in queue
     event_list = pygame.event.get()
@@ -70,95 +73,57 @@ while running:
         # running bool to false
         if event.type == pygame.QUIT:
             running = False
-            if cam:
-                cam.stop()
+            if cam_manager:
+                cam_manager.stop_camera()
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RSHIFT:
-                if not cam:
+                if not cam_manager:
                     print("select a camera first")
                     continue
                 # Start the left player's timer
                 scrabble_clock.switch_to_left()
                 # Left player is always the bot (for now I guess)
-                process_snapshot = True
+                pygame.event.post(pygame.event.Event(PROCESS_SNAPSHOT_EVENT))
 
             if event.key == pygame.K_LSHIFT:
-                if not cam:
+                if not cam_manager:
                     print("select a camera first")
                     continue
                 # Start the right player's timer
                 scrabble_clock.switch_to_right()
 
-    scrabble_clock.update()
-
-    selected_option = list1.update(event_list)
-    if selected_option >= 0:
-        snapshot = pygame.surface.Surface(cam_res, 0, window)
-        cam = pygame.camera.Camera(selected_option, cam_res)
-        cam.start()
-        print(cam.get_size())  # Actual res.. is there a way to get this earlier?
-
-    window.fill((255, 255, 255))
-    list1.draw(window)
-
-    if cam and cam.query_image():
-        snapshot = cam.get_image(snapshot)
-        scaled = pygame.transform.scale(snapshot, (512, 288))
-        window.blit(scaled, (100, 100))
-        if process_snapshot:
-            buffer = BytesIO()
-            pygame.image.save(snapshot, buffer, "JPEG")
-            img = buffer.getvalue()
+        if event.type == PROCESS_SNAPSHOT_EVENT:
+            img = cam_manager.process_snapshot()
             res_json = get_from_scrabblecam("board", img)
+            print("res_json", res_json)
             if res_json and res_json.get("board"):
                 fen = scrabblecam_to_fen(res_json["board"])
                 print(fen)
             else:
                 print("Got unexpected response", res_json)
 
-    left_time, right_time = scrabble_clock.get_times()
-    left_timer_surface = font.render(
-        f"{int(left_time // 60)}:{int(left_time % 60):02}", True, (0, 0, 0)
-    )
-    right_timer_surface = font.render(
-        f"{int(right_time // 60)}:{int(right_time % 60):02}", True, (0, 0, 0)
-    )
+    scrabble_clock.update()
 
-    # Calculate positions for the timers and labels
-    left_timer_pos = (50, window_height - 50)
-    right_timer_pos = (
-        window_width - right_timer_surface.get_width() - 50,
-        window_height - 50,
+    selected_option = list1.update(event_list)
+    if selected_option >= 0:
+        # snapshot = pygame.surface.Surface(cam_res, 0, window)
+        cam_manager = CameraManager(cam_res, camlist[selected_option])
+        cam_manager.start_camera()
+
+    window.fill((255, 255, 255))
+    list1.draw(window)
+
+    # Draw the camera at only a few hz.
+    if cam_manager and time.time() - last_time > 0.25:
+        last_blitted_snapshot = cam_manager.capture_image()
+        last_time = time.time()
+
+    if last_blitted_snapshot:
+        window.blit(last_blitted_snapshot, (144, 100))
+
+    draw_clocks_and_scores(
+        scrabble_clock, font, score_font, window_height, window_width, window
     )
-
-    left_circle_pos = (left_timer_pos[0], left_timer_pos[1] - 30)
-    right_circle_pos = (
-        right_timer_pos[0] + right_timer_surface.get_width(),
-        right_timer_pos[1] - 30,
-    )
-
-    left_label_pos = (
-        left_timer_pos[0],
-        left_timer_pos[1] + left_timer_surface.get_height(),
-    )
-    right_label_pos = (
-        right_timer_pos[0] - 50,
-        right_timer_pos[1] + right_timer_surface.get_height(),
-    )
-
-    # Render the label surfaces
-    left_label_surface = font.render("(L Shift - BOT)", True, (0, 0, 0))
-    right_label_surface = font.render("(R Shift - YOU)", True, (0, 0, 0))
-
-    window.blit(left_timer_surface, left_timer_pos)
-    window.blit(right_timer_surface, right_timer_pos)
-    window.blit(left_label_surface, left_label_pos)
-    window.blit(right_label_surface, right_label_pos)
-
-    if scrabble_clock.left_active:
-        draw_red_circle(window, left_circle_pos)
-    elif scrabble_clock.right_active:
-        draw_red_circle(window, right_circle_pos)
 
     pygame.display.flip()

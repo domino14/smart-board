@@ -10,6 +10,8 @@ class CameraManager:
 
     def start_camera(self):
         self.cam.start()
+        # Actual res.. is there a way to get this earlier?
+        print("actual camera resolution is", self.cam.get_size())
 
     def capture_image(self):
         if self.cam.query_image():
@@ -20,6 +22,7 @@ class CameraManager:
     def process_snapshot(self):
         buffer = BytesIO()
         pygame.image.save(self.snapshot, buffer, "JPEG")
+        pygame.image.save(self.snapshot, "tmp.jpg")
         return buffer.getvalue()
 
     def stop_camera(self):
