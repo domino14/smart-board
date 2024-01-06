@@ -8,6 +8,7 @@ from optionbox import OptionBox
 from io import BytesIO
 from scrabblecam import get_from_scrabblecam
 from clock import ScrabbleClock
+from cgp import scrabblecam_to_fen
 
 
 scrabble_clock = ScrabbleClock(25 * 60)  # Initialize with 25 minutes
@@ -110,7 +111,11 @@ while running:
             pygame.image.save(snapshot, buffer, "JPEG")
             img = buffer.getvalue()
             res_json = get_from_scrabblecam("board", img)
-            print(res_json)
+            if res_json and res_json.get("board"):
+                fen = scrabblecam_to_fen(res_json["board"])
+                print(fen)
+            else:
+                print("Got unexpected response", res_json)
 
     left_time, right_time = scrabble_clock.get_times()
     left_timer_surface = font.render(
