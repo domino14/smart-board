@@ -1,1 +1,1 @@
-`python loop.py`
+`python main.py`

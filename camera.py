@@ -22,10 +22,57 @@ class CameraManager:
         return None
 
     def process_snapshot(self):
-        buffer = BytesIO()
-        pygame.image.save(self.snapshot, buffer, "JPEG")
-        pygame.image.save(self.snapshot, "tmp.jpg")
-        return buffer.getvalue()
+        return process_snapshot(self.snapshot, self.cam_res)
 
     def stop_camera(self):
         self.cam.stop()
+
+
+class MockCameraManager:
+    def __init__(self, cam_res, img_file):
+        self.cam_res = cam_res
+        self.img_file = img_file
+        self.snapshot = pygame.surface.Surface(cam_res, 0)
+
+    def start_camera(self):
+        print("Started mock camera")
+
+    def capture_image(self):
+        self.snapshot = pygame.image.load(self.img_file)
+        return pygame.transform.scale(self.snapshot, (512, 288))
+
+    def process_snapshot(self):
+        return process_snapshot(self.snapshot, self.cam_res)
+
+    def stop_camera(self):
+        print("Stop mock camera")
+
+
+def process_snapshot(snapshot: pygame.Surface, cam_res):
+    board_buffer = BytesIO()
+    # We are assuming that the board is facing the player, and
+    # thus away from the bot. So we should rotate the snapshot so that
+    # it's from the bot's perspective.
+
+    rotated = pygame.transform.rotate(snapshot, 180)
+
+    pygame.image.save(rotated, board_buffer, "JPEG")
+    pygame.image.save(rotated, "board.jpg")
+
+    # Figure out a rough position for the rack. This is very kludgy.
+    rack_buffer = BytesIO()
+    source_x_size = cam_res[0] / 2
+    source_y_size = cam_res[1] / 5
+    source_x_top = cam_res[0] / 3
+    source_y_top = 4 * cam_res[1] / 5
+
+    cropped = pygame.Surface((source_x_size, source_y_size))
+    cropped.blit(
+        snapshot,
+        (0, 0),
+        (source_x_top, source_y_top, source_x_size, source_y_size),
+    )
+    pygame.image.save(cropped, rack_buffer, "JPEG")
+    pygame.image.save(cropped, "rack.jpg")
+
+    return board_buffer.getvalue(), rack_buffer.getvalue()

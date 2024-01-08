@@ -1,12 +1,13 @@
 import time
 import math
+import os
 
 
 import pygame
 
 
 class ScrabbleClockAndScores:
-    def __init__(self, initial_time):
+    def __init__(self, initial_time, p1, p2):  # p1 is left, p2 is right
         self.initial_time = initial_time
         self.left_time = initial_time
         self.right_time = initial_time
@@ -15,6 +16,8 @@ class ScrabbleClockAndScores:
         self.last_update_time = time.time()
         self.left_score = 0
         self.right_score = 0
+        self.p1 = p1
+        self.p2 = p2
 
     def update(self):
         current_time = time.time()
@@ -27,12 +30,26 @@ class ScrabbleClockAndScores:
             self.right_time -= elapsed_time
 
     def switch_to_left(self):
+        switched = True
+        if self.left_active:
+            switched = False
+
         self.right_active = False
         self.left_active = True
+        return switched
 
     def switch_to_right(self):
+        switched = True
+        if self.right_active:
+            switched = False
+
         self.left_active = False
         self.right_active = True
+        return switched
+
+    def stop_both_clocks(self):
+        self.left_active = False
+        self.right_active = False
 
     def get_times(self):
         return self.left_time, self.right_time
@@ -40,6 +57,12 @@ class ScrabbleClockAndScores:
     def update_scores(self, l, r):
         self.left_score = l
         self.right_score = r
+
+    def on_turn(self):
+        if self.left_active:
+            return self.p1
+        if self.right_active:
+            return self.p2
 
 
 def draw_red_circle(surface, position):
@@ -94,6 +117,10 @@ def draw_clocks_and_scores(
         right_timer_pos[0],
         right_timer_pos[1] + right_timer_surface.get_height(),
     )
+    stop_label_pos = (
+        (left_timer_pos[0] + right_timer_pos[0]) / 2,
+        left_timer_pos[1] + left_timer_surface.get_height(),
+    )
 
     left_score_pos = (
         left_timer_pos[0] + 200,
@@ -108,6 +135,7 @@ def draw_clocks_and_scores(
     # Render the label surfaces
     left_label_surface = timer_font.render("(L Shift - BOT)", True, (0, 0, 0))
     right_label_surface = timer_font.render("(R Shift - YOU)", True, (0, 0, 0))
+    stop_clock_label_surface = timer_font.render("(B - STOP CLOCK)", True, (0, 0, 0))
 
     # Render the score surfaces
     left_score_surface = score_font.render(
@@ -123,6 +151,7 @@ def draw_clocks_and_scores(
     window.blit(right_label_surface, right_label_pos)
     window.blit(left_score_surface, left_score_pos)
     window.blit(right_score_surface, right_score_pos)
+    window.blit(stop_clock_label_surface, stop_label_pos)
 
     if scrabble_clock.left_active:
         draw_red_circle(window, left_circle_pos)
