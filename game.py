@@ -1,5 +1,5 @@
 from scrabblecam import get_from_scrabblecam
-from cgp import scrabblecam_to_fen, fen_change_to_event
+from cgp import fen_change_to_event
 from woogles_api import set_racks, send_game_event, string_to_machine_letters
 
 
@@ -14,19 +14,7 @@ class WooglesGameManager:
     def set_game_id(self, game_id):
         self.game_id = game_id
 
-    def process_board_and_rack(self, board_img, rack_img):
-        board_json = get_from_scrabblecam("board", board_img)
-        fen = ""
-        if board_json and board_json.get("board"):
-            fen = scrabblecam_to_fen(board_json["board"])
-            print(fen)
-        else:
-            print("Got unexpected response", board_json)
-        rack_json = get_from_scrabblecam("rack", rack_img)
-        rack_letters = ""
-        if rack_json and rack_json.get("rack"):
-            rack_letters = "".join(rack_json.get("rack").split(","))
-            print("Rack is", rack_letters)
+    def process_board_and_rack(self, fen: str, rack_letters: str):
         if fen != "":
             # if not (fen != "" and rack_letters != ""):
             # We could not read either the board or the rack. Can't
