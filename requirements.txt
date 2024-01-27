@@ -2,3 +2,6 @@ pygame
 opencv-python
 requests
 pygame-gui
+pytest
+pytest-cov
+pytest-reportlog
