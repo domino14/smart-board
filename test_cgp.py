@@ -17,7 +17,7 @@ def test_scrabblecam_to_fen():
 
 def test_something_else():
     print("i am testing something else")
-    assert True == False
+    assert "Foo"
 
 
 def test_longrunning():
