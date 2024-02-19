@@ -19,4 +19,4 @@ jobs:
           CODECOMET_API_KEY: ${{ secrets.CODECOMET_API_KEY }}
         with:
           junit_file: junit.xml
-          test_suite: SmartBoard JUnit
+          test_suite: SmartBoardJUnit
