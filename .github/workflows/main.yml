@@ -14,9 +14,9 @@ jobs:
       - name: Run tests locally
         run: pytest --junitxml=junit.xml
       - name: Ingest XML
-        uses: codecomet-io/setup-and-run@v1.2
+        uses: codecomet-io/setup-and-run@v1.3
         env:
           CODECOMET_API_KEY: ${{ secrets.CODECOMET_API_KEY }}
         with:
           junit_file: junit.xml
-          test_suite: SmartBoardJUnit
+          test_suite: SmartBoard JUnit
