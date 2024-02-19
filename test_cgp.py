@@ -13,3 +13,14 @@ def test_scrabblecam_to_fen():
         cgp
         == "11YOOP/9G1A1X1/9L1G1E1/9O1E1N1/7VIZOR3/1JAM5E3UR/B1SIA?ANGS3NE/E2L2YOU1W2PI/RI1D1LENT1H1QI1/AW1E5FA1ICE/TRISTATE1OM2K1/EE1T3FARSIDP1/1NU2DATE4D1/1C1OBI9/RHINO10"
     )
+
+
+def test_something_else():
+    print("i am testing something else")
+    assert "Foo"
+
+
+def test_longrunning():
+    import time
+    time.sleep(2)
+    assert "I am a banana"

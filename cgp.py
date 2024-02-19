@@ -4,7 +4,7 @@ from woogles_api import string_to_machine_letters
 def scrabblecam_to_fen(board_str):
     rows = board_str.split("|")
     outstr = ""
-
+    print('I am in scrabblecam_to_fen')
     for idx, row in enumerate(rows):
         chars = row.split(",")
         emptyct = 0

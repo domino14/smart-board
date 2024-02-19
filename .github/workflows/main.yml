@@ -1,0 +1,22 @@
+on: [push]
+
+jobs:
+  codecomet_test_job:
+    runs-on: ubuntu-latest
+    name: A job to run codecomet tests
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          cache: "pip"
+      - run: pip install -r requirements.txt
+      - name: Run tests locally
+        run: pytest --junitxml=junit.xml
+      - name: Ingest XML
+        uses: codecomet-io/setup-and-run@v1.3
+        env:
+          CODECOMET_API_KEY: ${{ secrets.CODECOMET_API_KEY }}
+        with:
+          junit_file: junit.xml
+          test_suite: SmartBoard JUnit
